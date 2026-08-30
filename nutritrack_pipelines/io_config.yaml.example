@@ -1,0 +1,10 @@
+# Copy to io_config.yaml and fill in.
+# io_config.yaml is gitignored — never commit real credentials.
+default:
+  POSTGRES_CONNECT_TIMEOUT: 10
+  POSTGRES_DBNAME: portdata
+  POSTGRES_SCHEMA: public
+  POSTGRES_USER: <db_user>
+  POSTGRES_PASSWORD: "{{ env_var('POSTGRES_PASSWORD') }}"
+  POSTGRES_HOST: <db_container_name>
+  POSTGRES_PORT: 5432

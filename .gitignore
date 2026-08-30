@@ -1,0 +1,7 @@
+mage_data/
+*.csv
+nutritrack_pipelines/.file_versions/
+nutritrack_pipelines/__pycache__/
+nutritrack_pipelines/.ssh_tunnel/
+nutritrack_pipelines/io_config.yaml
+.env
