@@ -3,6 +3,9 @@ from mage_ai.io.config import ConfigFileLoader
 from mage_ai.io.postgres import Postgres
 from pandas import DataFrame
 from os import path
+from nutritrack_pipelines.utils.quality import (
+    run_checks, has_rows, no_duplicate_keys, no_nulls, non_negative,
+)
 
 if 'data_exporter' not in globals():
     from mage_ai.data_preparation.decorators import data_exporter
@@ -73,6 +76,11 @@ def export_data_to_postgres(df: DataFrame, **kwargs) -> None:
                 VALUES ('{upstream}', '{ASSET_KEY}', 'feeds')
                 ON CONFLICT DO NOTHING;
             """)
-
+        run_checks(loader, ASSET_KEY, df, [
+            ('has_rows', has_rows),
+            ('unique_region_year', no_duplicate_keys('region_code', 'traffic_year')),
+            ('key_fields_present', no_nulls('region_code', 'region_name', 'traffic_year')),
+            ('total_teu_non_negative', non_negative('total_teu')),
+        ])
         loader.conn.commit()
         print(f"exported {len(df)} rows and registered {ASSET_KEY}")
