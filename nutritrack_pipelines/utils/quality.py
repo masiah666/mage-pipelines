@@ -53,3 +53,14 @@ def non_negative(col):
         n = int((df[col] < 0).sum())
         return n == 0, f"{n} negative values in {col}"
     return check
+    
+def positive(col):
+    def check(df):
+        n = int((df[col] <= 0).sum())
+        return n == 0, f"{n} non-positive values in {col}"
+    return check
+
+
+def no_self_legs(df):
+    n = int((df['from_portid'] == df['to_portid']).sum())
+    return n == 0, f"{n} rows where from_portid = to_portid"
