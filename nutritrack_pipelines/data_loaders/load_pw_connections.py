@@ -1,22 +1,25 @@
 import pandas as pd
-import requests
+
+if 'data_loader' not in globals():
+    from mage_ai.data_preparation.decorators import data_loader
+
+from nutritrack_pipelines.utils.fetch import fetch_json
 
 BASE = ('https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/'
         'spillovers_port_level_impact/FeatureServer/0/query')
 
+
 @data_loader
 def load_data(*args, **kwargs):
     rows, offset = [], 0
-    while offset < 300000:                    # hard stop above the ~227k expected
-        r = requests.get(BASE, params={
+    while offset < 300000:
+        body = fetch_json(BASE, {
             'where': '1=1',
             'outFields': '*',
             'f': 'json',
             'resultOffset': offset,
             'resultRecordCount': 1000,
-        }, timeout=60)
-        r.raise_for_status()
-        body = r.json()
+        }, method='post')
         feats = body.get('features', [])
         rows.extend(f['attributes'] for f in feats)
         if offset % 20000 == 0:
