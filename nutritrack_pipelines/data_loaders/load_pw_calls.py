@@ -1,7 +1,5 @@
 import json
-import time
 import pandas as pd
-import requests
 
 if 'data_loader' not in globals():
     from mage_ai.data_preparation.decorators import data_loader
@@ -21,30 +19,14 @@ CALL_STATS = json.dumps([
 ], separators=(',', ':'))
 
 
-def fetch_json(params, attempts=6):
-    last = None
-    for attempt in range(attempts):
-        try:
-            r = requests.post(BASE, data=params, timeout=120)
-            r.raise_for_status()
-            body = r.json()
-            if 'error' in body:
-                raise RuntimeError(f"ArcGIS error: {body['error']}")
-            return body
-        except Exception as exc:
-            last = exc
-            if attempt < attempts - 1:
-                delay = min(5 * 2 ** attempt, 80)
-                print(f"  retry in {delay}s: {exc}")
-                time.sleep(delay)
-    raise RuntimeError(f"query failed after {attempts} attempts: {last}")
+from nutritrack_pipelines.utils.fetch import fetch_json
 
 
 @data_loader
 def load_data(*args, **kwargs):
     stats = json.dumps([{'statisticType': 'max', 'onStatisticField': 'year',
                          'outStatisticFieldName': 'y'}], separators=(',', ':'))
-    body = fetch_json({'where': '1=1', 'outStatistics': stats, 'f': 'json'})
+    body = fetch_json(BASE, {'where': '1=1', 'outStatistics': stats, 'f': 'json'}, method='post')
     max_year = int(body['features'][0]['attributes']['y'])
     years = [max_year - 1, max_year]
     print(f"layer max year {max_year}; fetching {years}")
@@ -53,7 +35,7 @@ def load_data(*args, **kwargs):
     for year in years:
         offset, rows = 0, []
         while offset < 30000:
-            body = fetch_json({
+            body = fetch_json(BASE, {
                 'where': f'year={year}',
                 'groupByFieldsForStatistics': 'portid,year,month',
                 'outStatistics': CALL_STATS,
@@ -61,7 +43,7 @@ def load_data(*args, **kwargs):
                 'f': 'json',
                 'resultOffset': offset,
                 'resultRecordCount': 1000,
-            })
+            }, method='post')
             feats = body.get('features', [])
             rows.extend(f['attributes'] for f in feats)
             if not body.get('exceededTransferLimit'):

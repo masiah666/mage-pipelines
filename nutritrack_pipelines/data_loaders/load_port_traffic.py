@@ -1,16 +1,20 @@
 import pandas as pd
-import requests
+
+if 'data_loader' not in globals():
+    from mage_ai.data_preparation.decorators import data_loader
+
+from nutritrack_pipelines.utils.fetch import fetch_json
+
+URL = 'https://api.worldbank.org/v2/country/all/indicator/IS.SHP.GOOD.TU'
+
 
 @data_loader
 def load_data(*args, **kwargs):
-    url = 'https://api.worldbank.org/v2/country/all/indicator/IS.SHP.GOOD.TU'
     rows = []
     page = 1
 
     while page <= 50:
-        r = requests.get(url, params={'format': 'json', 'per_page': 1000, 'page': page}, timeout=30)
-        r.raise_for_status()
-        body = r.json()
+        body = fetch_json(URL, {'format': 'json', 'per_page': 1000, 'page': page})
 
         meta, records = body[0], body[1]
         rows.extend(records)

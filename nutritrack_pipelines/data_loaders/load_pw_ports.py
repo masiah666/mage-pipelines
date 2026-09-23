@@ -1,22 +1,25 @@
 import pandas as pd
-import requests
+
+if 'data_loader' not in globals():
+    from mage_ai.data_preparation.decorators import data_loader
+
+from nutritrack_pipelines.utils.fetch import fetch_json
 
 BASE = ('https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/'
         'PortWatch_ports_database/FeatureServer/0/query')
 
+
 @data_loader
 def load_data(*args, **kwargs):
     rows, offset = [], 0
-    while offset < 10000:                      # hard stop
-        r = requests.get(BASE, params={
+    while offset < 10000:
+        body = fetch_json(BASE, {
             'where': '1=1',
             'outFields': '*',
             'f': 'json',
             'resultOffset': offset,
             'resultRecordCount': 1000,
-        }, timeout=60)
-        r.raise_for_status()
-        body = r.json()
+        }, method='post')
         feats = body.get('features', [])
         rows.extend(f['attributes'] for f in feats)
         print(f"offset {offset}: {len(feats)} rows")
